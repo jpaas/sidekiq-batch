@@ -169,7 +169,9 @@ module Sidekiq
     end
 
     def valid?(batch = self)
-      valid = !Sidekiq.redis { |r| r.exists("invalidated-bid-#{batch.bid}") }
+      # Support both Boolean and Integer values - changes in redis-client version >= 4.2.0
+      exists = Sidekiq.redis { |r| r.exists("invalidated-bid-#{batch.bid}") }
+      valid = exists.is_a?(Numeric) ? exists == 0 : !exists
       batch.parent ? valid && valid?(batch.parent) : valid
     end
 
